@@ -34,3 +34,17 @@ CREATE TABLE hexagons (
 
 CREATE INDEX idx_hexagons_geometry_gist ON hexagons USING GIST (geometry);
 CREATE INDEX idx_hexagons_zoom_level ON hexagons (zoom_level);
+
+
+-- Hexagons table in which reduced geometry is placed with a precision  of 1 cm. 
+CREATE TABLE hexagons_reduced (
+	receptor_id integer NOT NULL,
+	zoom_level posint NOT NULL,
+	geometry geometry(Polygon),
+
+	CONSTRAINT hexagons_reduced_pkey PRIMARY KEY (receptor_id, zoom_level),
+	CONSTRAINT hexagons_reduced_fkey_receptors FOREIGN KEY (receptor_id) REFERENCES receptors
+);
+
+CREATE INDEX idx_hexagons_reduced_geometry_gist ON hexagons USING GIST (geometry);
+CREATE INDEX idx_hexagons_reduced_zoom_level ON hexagons (zoom_level);
