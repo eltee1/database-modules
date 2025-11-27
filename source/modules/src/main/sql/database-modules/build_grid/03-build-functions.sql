@@ -69,14 +69,14 @@ DECLARE
 	v_land_geometry geometry;
 BEGIN
 	RAISE NOTICE '[%] Generating land geometry...', to_char(clock_timestamp(), 'DD-MM-YYYY HH24:MI:SS.MS');
-	v_land_geometry := (SELECT ST_Union(geometry) FROM province_land_borders);
+	v_land_geometry := (SELECT ST_Union(geometry) FROM grid.province_land_borders);
 
 	RAISE NOTICE '[%] Generating all geometry of interests...', to_char(clock_timestamp(), 'DD-MM-YYYY HH24:MI:SS.MS');
-	INSERT INTO geometry_of_interests(assessment_area_id, geometry)
+	INSERT INTO grid.geometry_of_interests(assessment_area_id, geometry)
 	SELECT * FROM
 		(SELECT
 			assessment_area_id,
-			ST_Multi(ae_assessment_area_geometry_of_interest(assessment_area_id, v_land_geometry)) AS geometry
+			ST_Multi(grid.ae_assessment_area_geometry_of_interest(assessment_area_id, v_land_geometry)) AS geometry
 
 			FROM
 				(SELECT assessment_area_id FROM nature.assessment_areas WHERE type = 'natura2000_area' ORDER BY assessment_area_id) AS assessment_area_ids

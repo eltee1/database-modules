@@ -37,7 +37,7 @@ $BODY$
 			zoom_level
 
 			FROM vector_tiles
-				INNER JOIN hexagons_reduced AS hexagons ON ST_Intersects(vector_tiles.geometry, hexagons.geometry) -- hier dus
+				INNER JOIN hexagons_reduced AS hexagons ON ST_Intersects(vector_tiles.geometry, hexagons.geometry)
 
 			WHERE zoom_level = ANY(string_to_array(system.constant('RESULT_ZOOM_LEVELS'), ',')::int[])
 	),
@@ -48,7 +48,7 @@ $BODY$
 			intersected_areas.zoom_level
 
 			FROM intersected_areas
-			
+
 			GROUP BY intersected_areas.receptor_id, intersected_areas.zoom_level
 	)
 	SELECT
@@ -62,3 +62,47 @@ $BODY$
 		WHERE ST_Area(unioned_intersected_areas.geometry) > 0;
 $BODY$
 LANGUAGE sql VOLATILE;
+
+
+/*
+ * ae_determine_habitat_coverage_on_hexagon
+ * ----------------------------------------
+ * Function to determine the average coverage for a critical deposition area on a receptor. This can be either a habitat or a relevant habitat.
+ *
+ * The coverages of the intersecting (relevant) habitat areas is retrieved, and these combined into a weighted average per habitat.
+ * Weight is based on the surface of the intersection between habitat area and the hexagon at the given zoom level.
+ *
+ * The multiplication of this intersection-surface and the average coverage results in the cartographic surface (gekarteerde oppervlakte) of the
+ * critical deposition area on this receptor.
+ * This will be the same as determining the individual cartographic surfaces per intersected habitat area and summing those values.
+ *
+ * @returns Average coveragefraction for a habitat on a receptor, weighted by surface of the intersections between habitat areas and hexagon.
+ */
+CREATE OR REPLACE FUNCTION ae_determine_habitat_coverage_on_hexagon(v_assessment_area_id integer, v_type public.critical_deposition_area_type, v_habitat_type_id integer, v_receptor_id integer, v_zoom_level integer)
+	RETURNS fraction AS
+$BODY$
+	WITH hexagon AS (SELECT geometry FROM hexagons WHERE receptor_id = v_receptor_id AND zoom_level = v_zoom_level)
+	SELECT
+		system.weighted_avg(coverage::numeric, ST_Area(ST_Intersection(habitat_areas.geometry, hexagon.geometry))::numeric)::fraction
+
+		FROM nature.habitat_areas
+			CROSS JOIN hexagon
+
+		WHERE assessment_area_id = v_assessment_area_id
+			AND habitat_type_id = v_habitat_type_id
+			AND ST_Intersects(habitat_areas.geometry, hexagon.geometry)
+		HAVING v_type = 'habitat'
+	UNION ALL
+	SELECT
+		system.weighted_avg(coverage::numeric, ST_Area(ST_Intersection(relevant_habitat_areas.geometry, hexagon.geometry))::numeric)::fraction
+
+		FROM nature.relevant_habitat_areas
+			CROSS JOIN hexagon
+
+		WHERE assessment_area_id = v_assessment_area_id
+			AND habitat_type_id = v_habitat_type_id
+			AND ST_Intersects(relevant_habitat_areas.geometry, hexagon.geometry)
+		HAVING v_type = 'relevant_habitat'
+	;
+$BODY$
+LANGUAGE SQL STABLE;
