@@ -36,7 +36,12 @@ CREATE INDEX idx_hexagons_geometry_gist ON hexagons USING GIST (geometry);
 CREATE INDEX idx_hexagons_zoom_level ON hexagons (zoom_level);
 
 
--- Hexagons table in which reduced geometry is placed with a precision  of 1 cm. 
+/*
+ * hexagons_reduced
+ * ----------------
+ * Copy of hexagons, with a reduced geometric precision to 1 cm. 
+ * Used in the reduced precision build.
+ */
 CREATE TABLE hexagons_reduced (
 	receptor_id integer NOT NULL,
 	zoom_level posint NOT NULL,
@@ -46,5 +51,5 @@ CREATE TABLE hexagons_reduced (
 	CONSTRAINT hexagons_reduced_fkey_receptors FOREIGN KEY (receptor_id) REFERENCES receptors
 );
 
-CREATE INDEX idx_hexagons_reduced_geometry_gist ON hexagons USING GIST (geometry);
-CREATE INDEX idx_hexagons_reduced_zoom_level ON hexagons (zoom_level);
+CREATE INDEX idx_hexagons_reduced_geometry_gist ON hexagons_reduced USING GIST (geometry);
+CREATE INDEX idx_hexagons_reduced_zoom_level ON hexagons_reduced (zoom_level);

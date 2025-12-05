@@ -6,13 +6,13 @@
 CREATE OR REPLACE VIEW build_receptors_to_assessment_areas_view AS
 SELECT
 	assessment_area_id,
-	(ae_determine_hexagon_intersections(geometry)).receptor_id,
-	(ae_determine_hexagon_intersections(geometry)).zoom_level,
-	(ae_determine_hexagon_intersections(geometry)).surface
+	(grid.ae_determine_hexagon_intersections(ST_ReducePrecision(geometry, 0.01))).receptor_id,
+	(grid.ae_determine_hexagon_intersections(ST_ReducePrecision(geometry, 0.01))).surface,
+	(grid.ae_determine_hexagon_intersections(ST_ReducePrecision(geometry, 0.01))).zoom_level
+		
+	FROM nature.assessment_areas_reduced -- assessment_areas
 
-	FROM nature.assessment_areas
-
-	WHERE assessment_areas.type = 'natura2000_area'
+	WHERE type = 'natura2000_area'
 ;
 
 
@@ -32,17 +32,17 @@ SELECT
 	receptor_id,
 	zoom_level,
 	surface,
-	ae_determine_habitat_coverage_on_hexagon(assessment_area_id, type, critical_deposition_area_id, receptor_id, zoom_level::integer) AS receptor_habitat_coverage
+	grid.ae_determine_habitat_coverage_on_hexagon(assessment_area_id, type, critical_deposition_area_id, receptor_id, zoom_level::integer) AS receptor_habitat_coverage
 
 	FROM
 	(SELECT
 		assessment_area_id,
 		type,
 		critical_deposition_area_id,
-		(ae_determine_hexagon_intersections(geometry)).receptor_id,
-		(ae_determine_hexagon_intersections(geometry)).surface,
-		(ae_determine_hexagon_intersections(geometry)).zoom_level
-
-		FROM nature.critical_deposition_areas_view
+		(grid.ae_determine_hexagon_intersections(ST_ReducePrecision(geometry, 0.01))).receptor_id,
+		(grid.ae_determine_hexagon_intersections(ST_ReducePrecision(geometry, 0.01))).surface,
+		(grid.ae_determine_hexagon_intersections(ST_ReducePrecision(geometry, 0.01))).zoom_level
+		
+		FROM nature.critical_deposition_areas_reduced -- critical_deposition_areas_view
 	) AS mapping_receptor_cda
 ;

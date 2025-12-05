@@ -8,7 +8,7 @@ CREATE OR REPLACE FUNCTION ae_determine_number_of_hexagon_rows(zoomlevel int = 1
 $BODY$
 DECLARE
 	-- First the coordinates of the lower left and upper right corner of the bounding box are declared
-	bounding_box Box2D = ae_get_calculator_grid_boundary_box();
+	bounding_box Box2D = grid.ae_get_calculator_grid_boundary_box();
 	coordinate_x_min int = ceiling(ST_XMin(bounding_box));
 	coordinate_x_max int = floor(ST_XMax(bounding_box));
 	coordinate_y_min int = ceiling(ST_YMin(bounding_box));
@@ -38,7 +38,7 @@ CREATE OR REPLACE FUNCTION ae_determine_receptor_id_from_coordinates(coordinate_
 $BODY$
 DECLARE
 	-- First the coordinates of the lower left and upper right corner of the bounding box are declared
-	bounding_box Box2D = ae_get_calculator_grid_boundary_box();
+	bounding_box Box2D = grid.ae_get_calculator_grid_boundary_box();
 	coordinate_x_min int = ceiling(ST_XMin(bounding_box));
 	coordinate_x_max int = floor(ST_XMax(bounding_box));
 	coordinate_y_min int = ceiling(ST_YMin(bounding_box));
@@ -50,7 +50,7 @@ DECLARE
 	height_hexagon double precision = radius_hexagon * |/3;
 
 	-- And the number of hexagons in a row
-	number_of_hexagons_in_a_row int = ae_determine_number_of_hexagon_rows(zoomLevel);
+	number_of_hexagons_in_a_row int = grid.ae_determine_number_of_hexagon_rows(zoomLevel);
 
 	-- Finally some dummy variables
 	x_offset_even_rows int;
@@ -100,7 +100,7 @@ $BODY$
 
 DECLARE
 	-- First the coordinates of the lower left and upper right corner of the bounding box for hexagons are declared
-	bounding_box Box2D = ae_get_calculator_grid_boundary_box();
+	bounding_box Box2D = grid.ae_get_calculator_grid_boundary_box();
 	coordinate_x_min int = ceiling(ST_XMin(bounding_box));
 	coordinate_x_max int = floor(ST_XMax(bounding_box));
 	coordinate_y_min int = ceiling(ST_YMin(bounding_box));
@@ -117,7 +117,7 @@ DECLARE
 	height_hexagon double precision = radius_hexagon * |/3;
 
 	-- And the number of hexagons in a row
-	number_of_hexagons_in_a_row int = ae_determine_number_of_hexagon_rows();
+	number_of_hexagons_in_a_row int = grid.ae_determine_number_of_hexagon_rows();
 
 	-- Finally some dummy variables
 	number_of_hex_before_rectangle_odd int;
@@ -183,6 +183,41 @@ LANGUAGE plpgsql IMMUTABLE;
 
 
 /*
+ * ae_determine_coordinates_from_receptor_id
+ * -----------------------------------------
+ * Function to determine the coordinates (point geometry) for the supplied receptor_id.
+ */
+CREATE OR REPLACE FUNCTION ae_determine_coordinates_from_receptor_id(receptor_id int)
+	RETURNS geometry AS
+$BODY$
+DECLARE
+	-- First the coordinates of the lower left and upper right corner of the bounding box are declared
+	bounding_box Box2D = grid.ae_get_calculator_grid_boundary_box();
+	coordinate_x_min int = ceiling(ST_XMin(bounding_box));
+	coordinate_x_max int = floor(ST_XMax(bounding_box));
+	coordinate_y_min int = ceiling(ST_YMin(bounding_box));
+	coordinate_y_max int = floor(ST_YMax(bounding_box));
+
+	-- Next the distance of the midpoint to a cornerpoint (radius) and the total height of the hexagon are given
+	surface_zoom_level_1 int = system.constant('SURFACE_ZOOM_LEVEL_1')::integer;
+	radius_hexagon double precision = |/(surface_zoom_level_1 * 2 / (3 * |/3));
+	height_hexagon double precision = radius_hexagon * sqrt(3);
+	number_of_hexagons_in_a_row int = grid.ae_determine_number_of_hexagon_rows();
+
+	-- And finally the return variables
+	return_coordinates double precision [];
+
+BEGIN
+	return_coordinates[0] = coordinate_x_min + ((receptor_id - 1) % number_of_hexagons_in_a_row) * 3 * radius_hexagon + (((receptor_id - 1) / number_of_hexagons_in_a_row) % 2) * 3 / 2.0 * radius_hexagon;
+	return_coordinates[1] = coordinate_y_min + ((receptor_id - 1) / number_of_hexagons_in_a_row) * height_hexagon / 2.0;
+
+	RETURN ST_SetSRID(ST_MakePoint(return_coordinates[0], return_coordinates[1]), ae_get_srid());
+END;
+$BODY$
+LANGUAGE plpgsql IMMUTABLE;
+
+
+/*
  * ae_determine_receptor_ids_in_geometry
  * -------------------------------------
  * Function to determine the receptor_ids in the supplied geometry.
@@ -196,9 +231,9 @@ DECLARE
 	r_geometry geometry;
 BEGIN
 	FOR r_receptor_id IN
-		SELECT ae_determine_receptor_ids_in_rectangle(ST_XMin(v_geometry)::int, ST_XMax(v_geometry)::int, ST_YMin(v_geometry)::int, ST_YMax(v_geometry)::int)
+		SELECT grid.ae_determine_receptor_ids_in_rectangle(ST_XMin(v_geometry)::int, ST_XMax(v_geometry)::int, ST_YMin(v_geometry)::int, ST_YMax(v_geometry)::int)
 	LOOP
-		r_geometry := ae_determine_coordinates_from_receptor_id(r_receptor_id);
+		r_geometry := grid.ae_determine_coordinates_from_receptor_id(r_receptor_id);
 		IF ST_Intersects(r_geometry, v_geometry) THEN
 			RETURN QUERY SELECT r_receptor_id, r_geometry;
 		END IF;
@@ -219,7 +254,7 @@ CREATE OR REPLACE FUNCTION ae_determine_receptor_ids_from_receptor_with_radius(r
 $BODY$
 DECLARE
 	-- First the coordinates of the lower left and upper right corner of the bounding box for hexagons are declared
-	bounding_box Box2D = ae_get_calculator_grid_boundary_box();
+	bounding_box Box2D = grid.ae_get_calculator_grid_boundary_box();
 	coordinate_x_min int = ceiling(ST_XMin(bounding_box));
 	coordinate_x_max int = floor(ST_XMax(bounding_box));
 	coordinate_y_min int = ceiling(ST_YMin(bounding_box));
@@ -231,7 +266,7 @@ DECLARE
 	height_hexagon double precision = radius_hexagon * |/3;
 
 	-- And the number of hexagons in a row
-	number_of_hexagons_in_a_row int = ae_determine_number_of_hexagon_rows();
+	number_of_hexagons_in_a_row int = grid.ae_determine_number_of_hexagon_rows();
 	number_of_hexagon_rows int = ceil( ((coordinate_y_max - coordinate_y_min) / height_hexagon) * 2 );
 	receptor_id_max int = number_of_hexagons_in_a_row * number_of_hexagon_rows;
 
@@ -305,7 +340,7 @@ CREATE OR REPLACE FUNCTION ae_is_receptor_id_available_on_zoomlevel(receptor_id 
 $BODY$
 DECLARE
 	-- First the coordinates of the lower left and upper right corner of the bounding box for hexagons are declared
-	bounding_box Box2D = ae_get_calculator_grid_boundary_box();
+	bounding_box Box2D = grid.ae_get_calculator_grid_boundary_box();
 	coordinate_x_min int = ceiling(ST_XMin(bounding_box));
 	coordinate_x_max int = floor(ST_XMax(bounding_box));
 	coordinate_y_min int = ceiling(ST_YMin(bounding_box));
@@ -317,7 +352,7 @@ DECLARE
 	height_hexagon double precision = radius_hexagon * |/3;
 
 	-- And the number of hexagons in a row
-	number_of_hexagons_in_a_row int = ae_determine_number_of_hexagon_rows();
+	number_of_hexagons_in_a_row int = grid.ae_determine_number_of_hexagon_rows();
 	number_of_hexagon_rows int = ceil( ((coordinate_y_max - coordinate_y_min) / height_hexagon) * 2 );
 
 	-- First the min and max receptor_ids and zoomlevel
@@ -359,41 +394,6 @@ LANGUAGE plpgsql IMMUTABLE;
 
 
 /*
- * ae_determine_coordinates_from_receptor_id
- * -----------------------------------------
- * Function to determine the coordinates (point geometry) for the supplied receptor_id.
- */
-CREATE OR REPLACE FUNCTION ae_determine_coordinates_from_receptor_id(receptor_id int)
-	RETURNS geometry AS
-$BODY$
-DECLARE
-	-- First the coordinates of the lower left and upper right corner of the bounding box are declared
-	bounding_box Box2D = ae_get_calculator_grid_boundary_box();
-	coordinate_x_min int = ceiling(ST_XMin(bounding_box));
-	coordinate_x_max int = floor(ST_XMax(bounding_box));
-	coordinate_y_min int = ceiling(ST_YMin(bounding_box));
-	coordinate_y_max int = floor(ST_YMax(bounding_box));
-
-	-- Next the distance of the midpoint to a cornerpoint (radius) and the total height of the hexagon are given
-	surface_zoom_level_1 int = system.constant('SURFACE_ZOOM_LEVEL_1')::integer;
-	radius_hexagon double precision = |/(surface_zoom_level_1 * 2 / (3 * |/3));
-	height_hexagon double precision = radius_hexagon * sqrt(3);
-	number_of_hexagons_in_a_row int = ae_determine_number_of_hexagon_rows();
-
-	-- And finally the return variables
-	return_coordinates double precision [];
-
-BEGIN
-	return_coordinates[0] = coordinate_x_min + ((receptor_id - 1) % number_of_hexagons_in_a_row) * 3 * radius_hexagon + (((receptor_id - 1) / number_of_hexagons_in_a_row) % 2) * 3 / 2.0 * radius_hexagon;
-	return_coordinates[1] = coordinate_y_min + ((receptor_id - 1) / number_of_hexagons_in_a_row) * height_hexagon / 2.0;
-
-	RETURN ST_SetSRID(ST_MakePoint(return_coordinates[0], return_coordinates[1]), ae_get_srid());
-END;
-$BODY$
-LANGUAGE plpgsql IMMUTABLE;
-
-
-/*
  * ae_determine_radius_and_offset_of_outer_receptor_from_midpoint_receptor
  * -----------------------------------------------------------------------
  * Function to determine the radius and number on this radius of a receptor (the outer receptor) with respect to another receptor (the midpoint receptor).
@@ -403,7 +403,7 @@ CREATE OR REPLACE FUNCTION ae_determine_radius_and_offset_of_outer_receptor_from
 $BODY$
 DECLARE
 	-- First the coordinates of the lower left and upper right corner of the bounding box for hexagons are declared
-	bounding_box Box2D = ae_get_calculator_grid_boundary_box();
+	bounding_box Box2D = grid.ae_get_calculator_grid_boundary_box();
 	coordinate_x_min int = ceiling(ST_XMin(bounding_box));
 	coordinate_x_max int = floor(ST_XMax(bounding_box));
 	coordinate_y_min int = ceiling(ST_YMin(bounding_box));
@@ -415,7 +415,7 @@ DECLARE
 	height_hexagon double precision = radius_hexagon * |/3;
 
 	-- And the number of hexagons in a row
-	number_of_hexagons_in_a_row int = ae_determine_number_of_hexagon_rows();
+	number_of_hexagons_in_a_row int = grid.ae_determine_number_of_hexagon_rows();
 
 	-- Finally some dummy variables
 	row_midpoint_receptor int;
@@ -458,7 +458,7 @@ BEGIN
 		return_offset := row_number FROM (
 					SELECT receptor_id_intern, row_number() over ()
 						FROM ae_determine_receptor_ids_from_receptor_with_radius(midpoint_receptor_id, return_radius) AS receptor_id_intern
-						WHERE ae_is_receptor_id_available_on_zoomlevel(receptor_id_intern, zoomlevel)
+						WHERE grid.ae_is_receptor_id_available_on_zoomlevel(receptor_id_intern, zoomlevel)
 				) AS row_selection
 				WHERE receptor_id_intern = outer_receptor_id;
 	END IF;

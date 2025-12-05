@@ -141,3 +141,47 @@ CREATE TABLE natura2000_directive_areas
 CREATE UNIQUE INDEX idx_natura2000_directive_areas_assessment_area_id ON natura2000_directive_areas (assessment_area_id);
 CREATE INDEX idx_natura2000_directive_areas_geometry_gist ON natura2000_directive_areas USING GIST (geometry);
 CREATE INDEX idx_natura2000_directive_areas_name ON natura2000_directive_areas (name);
+
+
+/*
+ * critical_deposition_areas_reduced
+ * ---------------------------------
+ * Table which holds the content of the relevant_habitats of critical_deposition_areas_view, with a reduced geometric precision to 1 cm.
+ * Used in the reduced precision build.
+ */
+CREATE TABLE critical_deposition_areas_reduced (
+	assessment_area_id integer NOT NULL,
+	type critical_deposition_area_type NOT NULL,
+	critical_deposition_area_id integer NOT NULL,
+	name text NOT NULL,
+	description text NOT NULL,
+	relevant boolean NOT NULL,
+	geometry geometry(MultiPolygon),
+
+	CONSTRAINT critical_deposition_areas_reduced_pkey PRIMARY KEY (assessment_area_id, critical_deposition_area_id)
+);
+
+CREATE INDEX idx_critical_deposition_areas_reduced_geometry_gist ON critical_deposition_areas_reduced USING GIST (geometry);
+
+
+/*
+ * assessment_areas_reduced
+ * ------------------------
+ * Copy of assessment_areas, with a reduced geometric precision to 1 cm. 
+ * Used in the reduced precision build.
+ */
+CREATE TABLE assessment_areas_reduced (
+	assessment_area_id integer NOT NULL,
+	type assessment_area_type NOT NULL,
+	name text NOT NULL,
+	code text NOT NULL,
+	authority_id integer NOT NULL,
+	geometry geometry(MultiPolygon),
+
+	CONSTRAINT assessment_areas_reduced_pkey PRIMARY KEY (assessment_area_id),
+	CONSTRAINT assessment_areas_reduced_fkey_authorities FOREIGN KEY (authority_id) REFERENCES authorities,
+	CONSTRAINT assessment_areas_reduced_code_unique UNIQUE (code)
+);
+
+CREATE INDEX idx_assessment_areas_reduced_geometry_gist ON assessment_areas_reduced USING GIST (geometry);
+CREATE INDEX idx_assessment_areas_reduced_name ON assessment_areas_reduced (name);

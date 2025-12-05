@@ -21,8 +21,8 @@ DECLARE
 BEGIN
 	WHILE (loop_iterator < 100) LOOP
 		random_receptor_id 	:= round(max_receptors * random())::int;
-		geometry_from_function	:= ae_determine_coordinates_from_receptor_id(random_receptor_id);
-		calculated_receptor_id	:= ae_determine_receptor_id_from_coordinates(round(ST_X(geometry_from_function))::int, round(ST_Y(geometry_from_function))::int,1);
+		geometry_from_function	:= grid.ae_determine_coordinates_from_receptor_id(random_receptor_id);
+		calculated_receptor_id	:= grid.ae_determine_receptor_id_from_coordinates(round(ST_X(geometry_from_function))::int, round(ST_Y(geometry_from_function))::int,1);
 
 		PERFORM system.assert_equals(random_receptor_id, calculated_receptor_id);
 
@@ -62,7 +62,7 @@ BEGIN
 		radius		:= 1 + (round(max_radius * random()))::int;
 		-- The perpendicular projection of the receptor_ids is done by taking the distinct numbers modulo the number of hexagons horizontally.
 		CREATE TEMPORARY TABLE tmp_calculated_receptor_ids AS SELECT DISTINCT ((receptor_id_calc - 1) % 1529 + 1) AS vert_proj
-					FROM ae_determine_receptor_ids_from_receptor_with_radius(receptor_id, radius) AS receptor_id_calc
+					FROM grid.ae_determine_receptor_ids_from_receptor_with_radius(receptor_id, radius) AS receptor_id_calc
 					ORDER BY vert_proj ASC;
 		number_of_distinct_rows 	:= count(*) FROM tmp_calculated_receptor_ids;
 		first_vertically_projected 	:= vert_proj FROM tmp_calculated_receptor_ids ORDER BY vert_proj ASC LIMIT 1;
@@ -119,7 +119,7 @@ BEGIN
 		receptor_id_in_database := receptor_id FROM hexagons WHERE ST_Within(test_point, hexagons.geometry) AND zoom_level = 1;
 		-- Only count when there are receptors in the database
 		IF (receptor_id_in_database > 0) THEN
-			receptor_id_from_function = ae_determine_receptor_id_from_coordinates(test_x_coordinate, test_y_coordinate, 1);
+			receptor_id_from_function = grid.ae_determine_receptor_id_from_coordinates(test_x_coordinate, test_y_coordinate, 1);
 			PERFORM system.assert_equals(receptor_id_in_database, receptor_id_from_function);
 			no_loop_iterator = 0;
 			loop_iterator = loop_iterator + 1;
@@ -218,9 +218,9 @@ DECLARE
 	zoomlevel_test posint;
 BEGIN
 	--The first part of the test.
-	PERFORM system.assert_true(ae_is_receptor_id_available_on_zoomlevel(input_1, 5), 'failed at receptor ' || input_1 || ' zoomlevel 5');
-	PERFORM system.assert_true(ae_is_receptor_id_available_on_zoomlevel(input_2, 5), 'failed at receptor ' || input_2 || ' zoomlevel 5');
-	PERFORM system.assert_true(ae_is_receptor_id_available_on_zoomlevel(input_3, 5), 'failed at receptor ' || input_3 || ' zoomlevel 5');
+	PERFORM system.assert_true(grid.ae_is_receptor_id_available_on_zoomlevel(input_1, 5), 'failed at receptor ' || input_1 || ' zoomlevel 5');
+	PERFORM system.assert_true(grid.ae_is_receptor_id_available_on_zoomlevel(input_2, 5), 'failed at receptor ' || input_2 || ' zoomlevel 5');
+	PERFORM system.assert_true(grid.ae_is_receptor_id_available_on_zoomlevel(input_3, 5), 'failed at receptor ' || input_3 || ' zoomlevel 5');
 
 	--The second part of the test. The geometry_test table has 100 records, so the succes_counter must also reach 100.
 	CREATE TEMPORARY TABLE tmp_geometry_test ON COMMIT DROP AS SELECT receptor_id, zoom_level FROM hexagons WHERE zoom_level = 1 ORDER BY random() LIMIT 20;
@@ -231,7 +231,7 @@ BEGIN
 
 	FOR rec_id_test IN SELECT receptor_id FROM tmp_geometry_test LOOP
 		zoomlevel_test	:= zoom_level FROM tmp_geometry_test WHERE receptor_id = rec_id_test LIMIT 1;
-		PERFORM system.assert_true(ae_is_receptor_id_available_on_zoomlevel(rec_id_test, zoomlevel_test), 'failed at receptor ' || rec_id_test || ' zoomlevel ' || zoomlevel_test);
+		PERFORM system.assert_true(grid.ae_is_receptor_id_available_on_zoomlevel(rec_id_test, zoomlevel_test), 'failed at receptor ' || rec_id_test || ' zoomlevel ' || zoomlevel_test);
 	END LOOP;
 
 	DROP TABLE tmp_geometry_test;
@@ -261,7 +261,7 @@ BEGIN
 		receptor_id_in_database := receptor_id FROM nature.receptors ORDER BY random() LIMIT 1;
 		geometry_in_database 	:= geometry FROM nature.receptors WHERE receptor_id = receptor_id_in_database;
 
-		PERFORM system.assert_equals(geometry_in_database, ae_determine_coordinates_from_receptor_id(receptor_id_in_database), 'failed at receptor ' || receptor_id_in_database);
+		PERFORM system.assert_equals(geometry_in_database, grid.ae_determine_coordinates_from_receptor_id(receptor_id_in_database), 'failed at receptor ' || receptor_id_in_database);
 		loop_iterator = loop_iterator + 1;
 	END LOOP;
 END;

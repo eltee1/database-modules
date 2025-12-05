@@ -44,7 +44,7 @@ DECLARE
 BEGIN
 	SELECT ST_X(ae_determine_coordinates_from_receptor_id), ST_Y(ae_determine_coordinates_from_receptor_id)
 		INTO x_offset, y_offset
-		FROM ae_determine_coordinates_from_receptor_id(receptor_id);
+		FROM grid.ae_determine_coordinates_from_receptor_id(receptor_id);
 
 	-- Initialise
 	surface_zoom_level_1	= system.constant('SURFACE_ZOOM_LEVEL_1')::integer;
