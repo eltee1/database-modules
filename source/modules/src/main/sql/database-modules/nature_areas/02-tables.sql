@@ -158,7 +158,7 @@ CREATE TABLE critical_deposition_areas_reduced (
 	relevant boolean NOT NULL,
 	geometry geometry(MultiPolygon),
 
-	CONSTRAINT critical_deposition_areas_reduced_pkey PRIMARY KEY (assessment_area_id, critical_deposition_area_id)
+	CONSTRAINT critical_deposition_areas_reduced_pkey PRIMARY KEY (assessment_area_id, type, critical_deposition_area_id)
 );
 
 CREATE INDEX idx_critical_deposition_areas_reduced_geometry_gist ON critical_deposition_areas_reduced USING GIST (geometry);

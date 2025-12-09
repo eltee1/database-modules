@@ -200,3 +200,47 @@ CREATE TABLE species_to_habitats
 	CONSTRAINT species_to_habitats_fkey_assessment_areas FOREIGN KEY (assessment_area_id) REFERENCES natura2000_areas (assessment_area_id), -- Currently limited to N2000. Can't reference base table 'assessment_areas'.
 	CONSTRAINT species_to_habitats_fkey_habitat_types FOREIGN KEY (goal_habitat_type_id) REFERENCES habitat_types (habitat_type_id)
 );
+
+
+/*
+ * habitat_areas_reduced
+ * ---------------------
+ * Copy of the table habitat_areas, but with a reduced geometric precision of 1 cm. 
+ */
+CREATE TABLE habitat_areas_reduced
+(
+	assessment_area_id integer NOT NULL,
+	habitat_area_id integer NOT NULL,
+	habitat_type_id integer NOT NULL,
+	coverage fraction NOT NULL,
+	geometry geometry(MultiPolygon),
+
+	CONSTRAINT habitat_areas_reduced_pkey PRIMARY KEY (habitat_area_id),
+	CONSTRAINT habitat_areas_reduced_fkey_habitat_types FOREIGN KEY (habitat_type_id) REFERENCES habitat_types
+);
+
+CREATE INDEX idx_habitat_areas_reduced_geometry_gist ON habitat_areas USING GIST (geometry);
+CREATE INDEX idx_habitat_areas_reduced_assessment_area_id ON habitat_areas (assessment_area_id);
+CREATE INDEX idx_habitat_areas_reduced_habitat_type_id ON habitat_areas (habitat_type_id);
+
+
+/*
+ * relevant_habitat_areas_reduced
+ * ------------------------------
+ * Copy of the table relevant_habitat_areas, but with a reduced geometric precision of 1 cm. 
+ */
+CREATE TABLE relevant_habitat_areas_reduced
+(
+	assessment_area_id integer NOT NULL,
+	habitat_area_id integer NOT NULL,
+	habitat_type_id integer NOT NULL,
+	coverage fraction NOT NULL,
+	geometry geometry(MultiPolygon),
+
+	CONSTRAINT relevant_habitat_areas_reduced_pkey PRIMARY KEY (habitat_area_id),
+	CONSTRAINT relevant_habitat_areas_reduced_fkey_habitat_types FOREIGN KEY (habitat_type_id) REFERENCES habitat_types
+);
+
+CREATE INDEX idx_relevant_habitat_areas_reduced_geometry_gist ON relevant_habitat_areas USING GIST (geometry);
+CREATE INDEX idx_relevant_habitat_areas_reduced_assessment_area_id ON relevant_habitat_areas (assessment_area_id);
+CREATE INDEX idx_relevant_habitat_areas_reduced_habitat_type_id ON relevant_habitat_areas (habitat_type_id);

@@ -36,7 +36,7 @@ $BODY$
 			zoom_level
 
 			FROM vector_tiles
-				INNER JOIN hexagons ON ST_Intersects(vector_tiles.geometry, hexagons.geometry)
+				INNER JOIN hexagons_reduced AS hexagons ON ST_Intersects(vector_tiles.geometry, hexagons.geometry)
 
 			WHERE zoom_level = ANY(string_to_array(system.constant('RESULT_ZOOM_LEVELS'), ',')::int[])
 	),
@@ -45,7 +45,6 @@ $BODY$
 			intersected_areas.receptor_id,
 			ST_Union(intersected_areas.geometry) AS geometry,
 			intersected_areas.zoom_level
-
 
 			FROM intersected_areas
 			GROUP BY intersected_areas.receptor_id, intersected_areas.zoom_level
@@ -80,28 +79,29 @@ LANGUAGE sql VOLATILE;
 CREATE OR REPLACE FUNCTION ae_determine_habitat_coverage_on_hexagon(v_assessment_area_id integer, v_type public.critical_deposition_area_type, v_habitat_type_id integer, v_receptor_id integer, v_zoom_level integer)
 	RETURNS fraction AS
 $BODY$
-	WITH hexagon AS (SELECT ST_ReducePrecision(geometry, 0.01) AS geometry FROM grid.hexagons WHERE receptor_id = v_receptor_id AND zoom_level = v_zoom_level)
+	WITH hexagon AS (SELECT geometry FROM grid.hexagons_reduced WHERE receptor_id = v_receptor_id AND zoom_level = v_zoom_level)
 	SELECT
-		system.weighted_avg(coverage::numeric, ST_Area(ST_Intersection(ST_ReducePrecision(habitat_areas.geometry, 0.01), hexagon.geometry))::numeric)::fraction
+		system.weighted_avg(coverage::numeric, ST_Area(ST_Intersection(habitat_areas_reduced.geometry, hexagon.geometry))::numeric)::fraction
 
-		FROM nature.habitat_areas
+		FROM nature.habitat_areas_reduced
 			CROSS JOIN hexagon
 
 		WHERE assessment_area_id = v_assessment_area_id
 			AND habitat_type_id = v_habitat_type_id
-			AND ST_Intersects(habitat_areas.geometry, hexagon.geometry)
+			AND ST_Intersects(habitat_areas_reduced.geometry, hexagon.geometry)
 		HAVING v_type = 'habitat'
 	UNION ALL
 	SELECT
-		system.weighted_avg(coverage::numeric, ST_Area(ST_Intersection(ST_ReducePrecision(relevant_habitat_areas.geometry, 0.01), hexagon.geometry))::numeric)::fraction
+		system.weighted_avg(coverage::numeric, ST_Area(ST_Intersection(relevant_habitat_areas_reduced.geometry, hexagon.geometry))::numeric)::fraction
 
-		FROM nature.relevant_habitat_areas
+		FROM nature.relevant_habitat_areas_reduced
 			CROSS JOIN hexagon
 
 		WHERE assessment_area_id = v_assessment_area_id
 			AND habitat_type_id = v_habitat_type_id
-			AND ST_Intersects(relevant_habitat_areas.geometry, hexagon.geometry)
+			AND ST_Intersects(relevant_habitat_areas_reduced.geometry, hexagon.geometry)
 		HAVING v_type = 'relevant_habitat'
 	;
 $BODY$
 LANGUAGE SQL STABLE;
+

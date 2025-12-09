@@ -6,9 +6,9 @@
 CREATE OR REPLACE VIEW build_receptors_to_assessment_areas_view AS
 SELECT
 	assessment_area_id,
-	(grid.ae_determine_hexagon_intersections(ST_ReducePrecision(geometry, 0.01))).receptor_id,
-	(grid.ae_determine_hexagon_intersections(ST_ReducePrecision(geometry, 0.01))).surface,
-	(grid.ae_determine_hexagon_intersections(ST_ReducePrecision(geometry, 0.01))).zoom_level
+	(grid.ae_determine_hexagon_intersections(geometry)).receptor_id,
+	(grid.ae_determine_hexagon_intersections(geometry)).surface,
+	(grid.ae_determine_hexagon_intersections(geometry)).zoom_level
 		
 	FROM nature.assessment_areas_reduced -- assessment_areas
 
@@ -39,9 +39,9 @@ SELECT
 		assessment_area_id,
 		type,
 		critical_deposition_area_id,
-		(grid.ae_determine_hexagon_intersections(ST_ReducePrecision(geometry, 0.01))).receptor_id,
-		(grid.ae_determine_hexagon_intersections(ST_ReducePrecision(geometry, 0.01))).surface,
-		(grid.ae_determine_hexagon_intersections(ST_ReducePrecision(geometry, 0.01))).zoom_level
+		(grid.ae_determine_hexagon_intersections(geometry)).receptor_id,
+		(grid.ae_determine_hexagon_intersections(geometry)).surface,
+		(grid.ae_determine_hexagon_intersections(geometry)).zoom_level
 		
 		FROM nature.critical_deposition_areas_reduced -- critical_deposition_areas_view
 	) AS mapping_receptor_cda
