@@ -7,15 +7,16 @@
  * @param v_geometry The geometry to determine intersects for.
  * @param v_gridsize The size of the used grids in kilometers.
  */
-CREATE OR REPLACE FUNCTION ae_determine_hexagon_intersections(v_geometry geometry(MultiPolygon), v_gridsize integer = 1)
+CREATE OR REPLACE FUNCTION ae_determine_hexagon_intersections(v_geometry geometry(MultiPolygon), v_geometry_reduced geometry(MultiPolygon), v_gridsize integer = 1)
 	RETURNS TABLE(receptor_id integer, surface double precision, geometry geometry, zoom_level smallint) AS
 $BODY$
 	WITH
 	split_geometry AS (
-		SELECT (ST_Dump(v_geometry)).geom AS split_geometry
+		SELECT (ST_Dump(v_geometry)).geom AS split_geometry, (ST_Dump(v_geometry_reduced)).geom AS split_geometry_reduced
 	),
 	regular_grid AS (
-		SELECT ae_create_regular_grid(ST_Envelope(v_geometry), v_gridsize * 1000)::geometry(Polygon) AS regular_geometry
+		SELECT ae_create_regular_grid(ST_Envelope(v_geometry), v_gridsize * 1000)::geometry(Polygon) AS regular_geometry,
+		ae_create_regular_grid(ST_Envelope(v_geometry_reduced), v_gridsize * 1000)::geometry(Polygon) AS regular_geometry_reduced
 	),
 	intersected AS (
 		SELECT
@@ -26,17 +27,34 @@ $BODY$
 			FROM regular_grid
 				INNER JOIN split_geometry ON ST_Intersects(regular_geometry, split_geometry) AND regular_geometry && split_geometry
 	),
+	intersected_reduced AS (
+		SELECT
+			CASE
+				WHEN ST_Within(regular_geometry_reduced, split_geometry_reduced)
+				THEN regular_geometry_reduced
+				ELSE ST_Intersection(regular_geometry_reduced, split_geometry_reduced) END AS geometry_reduced
+			FROM regular_grid
+				INNER JOIN split_geometry ON ST_Intersects(regular_geometry_reduced, split_geometry_reduced) AND regular_geometry_reduced && split_geometry_reduced
+	),
 	vector_tiles AS (
 		SELECT (ST_Dump(intersected.geometry)).geom AS geometry	FROM intersected WHERE intersected.geometry IS NOT NULL
+	),
+	vector_tiles_reduced AS (
+		SELECT (ST_Dump(intersected_reduced.geometry_reduced)).geom AS geometry_reduced	FROM intersected_reduced WHERE geometry_reduced IS NOT NULL
+	),
+	vector_tiles_combined AS (
+		SELECT vector_tiles.geometry, vector_tiles_reduced.geometry_reduced
+			FROM vector_tiles
+				CROSS JOIN vector_tiles_reduced
 	),
 	intersected_areas AS (
 		SELECT
 			hexagons.receptor_id,
-			ST_Intersection(vector_tiles.geometry, hexagons.geometry) AS geometry,
+			ST_Intersection(vector_tiles_combined.geometry, hexagons.geometry) AS geometry,
 			zoom_level
 
-			FROM vector_tiles
-				INNER JOIN hexagons ON ST_Intersects(vector_tiles.geometry, hexagons.geometry)
+			FROM vector_tiles_combined
+				INNER JOIN hexagons ON ST_Intersects(vector_tiles_combined.geometry_reduced, hexagons.geometry)
 
 			WHERE zoom_level = ANY(string_to_array(system.constant('RESULT_ZOOM_LEVELS'), ',')::int[])
 	),
@@ -45,7 +63,6 @@ $BODY$
 			intersected_areas.receptor_id,
 			ST_Union(intersected_areas.geometry) AS geometry,
 			intersected_areas.zoom_level
-
 
 			FROM intersected_areas
 			GROUP BY intersected_areas.receptor_id, intersected_areas.zoom_level

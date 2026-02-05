@@ -11,7 +11,8 @@ SELECT
 	assessment_area_id,
 	habitat_type_id,
 	system.weighted_avg(coverage::numeric, ST_Area(habitat_areas.geometry)::numeric)::fraction AS habitat_coverage,
-	ST_CollectionExtract(ST_Multi(ST_Union(habitat_areas.geometry)), 3) AS geometry
+	ST_CollectionExtract(ST_Multi(ST_Union(habitat_areas.geometry)), 3) AS geometry,
+	ST_Buffer(ST_CollectionExtract(ST_Multi(ST_Union(habitat_areas.geometry)), 3), -0.05) AS geometry_reduced
 
 	FROM habitat_areas
 
@@ -38,7 +39,8 @@ SELECT
 	assessment_area_id,
 	habitat_type_id,
 	system.weighted_avg(habitat_areas.coverage::numeric, ST_Area(habitat_areas.geometry)::numeric)::fraction AS habitat_coverage,
-	ST_CollectionExtract(ST_Multi(ST_Union(relevant_habitat_areas.geometry)), 3) AS geometry
+	ST_CollectionExtract(ST_Multi(ST_Union(relevant_habitat_areas.geometry)), 3) AS geometry,
+	ST_Buffer(ST_CollectionExtract(ST_Multi(ST_Union(relevant_habitat_areas.geometry)), 3), -0.05) AS geometry_reduced
 
 	FROM relevant_habitat_areas
 		INNER JOIN habitat_areas USING (assessment_area_id, habitat_area_id, habitat_type_id)

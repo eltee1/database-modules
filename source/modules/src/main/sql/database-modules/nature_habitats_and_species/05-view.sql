@@ -95,7 +95,8 @@ SELECT
 	name,
 	description,
 	FALSE AS relevant, -- These are NOT the relevant_habitats
-	geometry
+	geometry,
+	geometry_reduced
 
 	FROM habitats
 		INNER JOIN habitat_types USING (habitat_type_id)
@@ -107,7 +108,8 @@ SELECT
 	name,
 	description,
 	TRUE AS relevant, -- These are the relevant_habitats
-	geometry
+	geometry,
+	geometry_reduced
 
 	FROM relevant_habitats
 		INNER JOIN habitat_types USING (habitat_type_id)
