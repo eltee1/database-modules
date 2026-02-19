@@ -3,7 +3,7 @@ BEGIN; SELECT system.load_table('habitat_type_critical_levels', '{data_folder}/c
 BEGIN; SELECT system.load_table('habitat_properties', '{data_folder}/common/nature_habitats_and_species/25/nature.habitat_properties_20250408.txt'); COMMIT;
 BEGIN; SELECT system.load_table('habitat_type_relations', '{data_folder}/common/nature_habitats_and_species/25/nature.habitat_type_relations_20230619.txt'); COMMIT;
 
-BEGIN; SELECT system.load_table('habitat_areas', '{data_folder}/common/nature_habitats_and_species/25/nature.habitat_areas_20250718.txt'); COMMIT;
+BEGIN; SELECT system.load_table('habitat_areas', '{data_folder}/common/nature_habitats_and_species/25/habitat_areas_new_20260216.txt'); COMMIT;
 
 BEGIN; SELECT system.load_table('species', '{data_folder}/common/nature_habitats_and_species/25/nature.species_20221216.txt'); COMMIT;
 BEGIN; SELECT system.load_table('species_properties', '{data_folder}/common/nature_habitats_and_species/25/nature.species_properties_20250408.txt'); COMMIT;
