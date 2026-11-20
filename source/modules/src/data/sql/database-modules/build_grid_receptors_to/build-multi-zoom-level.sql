@@ -1,17 +1,12 @@
 -- Refresh buffered materialized view
-SET search_path TO 'nature', 'public';
-BEGIN; REFRESH MATERIALIZED VIEW assessment_areas_buffered; COMMIT;
+BEGIN; REFRESH MATERIALIZED VIEW nature.assessment_areas_buffered; COMMIT;
 
 
 -- build
 SELECT system.raise_notice('Build: receptors_to_assessment_areas @ ' || timeofday());
 {multithread on: SELECT assessment_area_id FROM nature.assessment_areas ORDER BY assessment_area_id}
-
-	-- For the executed multi thread code execution the import_common_into_schema search path schema is not set.
-	-- This is the only way I could find to make this code work.
 	SET search_path TO 'grid', 'public';
-
-	INSERT INTO receptors_to_assessment_areas_tolerance (receptor_id, assessment_area_id, zoom_level, is_robust_intersect, surface)
+	INSERT INTO grid.receptors_to_assessment_areas_tolerance (receptor_id, assessment_area_id, zoom_level, is_robust_intersect, surface)
 	SELECT
 		receptor_id,
 		assessment_area_id,
@@ -19,7 +14,7 @@ SELECT system.raise_notice('Build: receptors_to_assessment_areas @ ' || timeofda
 		is_robust_intersect,
 		surface
 
-		FROM build_receptors_to_assessment_areas_tolerance_view
+		FROM grid.build_receptors_to_assessment_areas_tolerance_view
 		
 		WHERE assessment_area_id = {assessment_area_id}
 	;
@@ -29,15 +24,14 @@ SELECT system.raise_notice('Build: receptors_to_assessment_areas @ ' || timeofda
 
 -- Fill the original table with the data where tolerance has been taken into account
 BEGIN;
-	SET search_path TO 'grid', 'public';
-	INSERT INTO receptors_to_assessment_areas (receptor_id, assessment_area_id, zoom_level, surface)
+	INSERT INTO grid.receptors_to_assessment_areas (receptor_id, assessment_area_id, zoom_level, surface)
 	SELECT
 		receptor_id,
 		assessment_area_id,
 		zoom_level,
 		surface
 
-		FROM receptors_to_assessment_areas_tolerance
+		FROM grid.receptors_to_assessment_areas_tolerance
 
 		WHERE is_robust_intersect IS TRUE
 
@@ -51,8 +45,7 @@ COMMIT;
 
 SELECT system.raise_notice('Build: critical_deposition_areas @ ' || timeofday());
 BEGIN;
-	SET search_path TO 'nature', 'public';
-	INSERT INTO critical_deposition_areas_buffered (assessment_area_id, type, critical_deposition_area_id, name, description, relevant, geometry)
+	INSERT INTO nature.critical_deposition_areas_buffered (assessment_area_id, type, critical_deposition_area_id, name, description, relevant, geometry, geometry_buffered)
 	SELECT 
 		assessment_area_id,
 		type,
@@ -63,18 +56,15 @@ BEGIN;
 		geometry,
 		ST_Buffer(geometry, system.constant('INTERSECTION_TOLERANCE')::numeric) AS geometry_buffered
 
-		FROM critical_deposition_areas_view 
+		FROM nature.critical_deposition_areas_view 
 	;
 COMMIT;
 
 
 SELECT system.raise_notice('Build: receptors_to_critical_deposition_areas @ ' || timeofday());
 {multithread on: SELECT assessment_area_id, critical_deposition_area_type FROM nature.assessment_areas CROSS JOIN (SELECT unnest(enum_range(null::public.critical_deposition_area_type)) AS critical_deposition_area_type) AS types ORDER BY assessment_area_id, critical_deposition_area_type }
-
-	-- For the executed multi thread code execution the import_common_into_schema search path schema is not set.
-	-- This is the only way I could find to make this code work.
 	SET search_path TO 'grid', 'public';
-	INSERT INTO receptors_to_critical_deposition_areas_tolerance (assessment_area_id, type, critical_deposition_area_id, receptor_id, zoom_level, is_robust_intersect, surface, receptor_habitat_coverage)
+	INSERT INTO grid.receptors_to_critical_deposition_areas_tolerance (assessment_area_id, type, critical_deposition_area_id, receptor_id, zoom_level, is_robust_intersect, surface, receptor_habitat_coverage)
 	SELECT 
 		assessment_area_id,
 		type,
@@ -85,7 +75,7 @@ SELECT system.raise_notice('Build: receptors_to_critical_deposition_areas @ ' ||
 		surface,
 		receptor_habitat_coverage
 
-		FROM build_receptors_to_critical_deposition_areas_tolerance_view 
+		FROM grid.build_receptors_to_critical_deposition_areas_tolerance_view 
 		
 		WHERE 
 			assessment_area_id = {assessment_area_id}
@@ -97,8 +87,7 @@ SELECT system.raise_notice('Build: receptors_to_critical_deposition_areas @ ' ||
 
 -- Fill the original table with the data where tolerance has been taken into account
 BEGIN;
-	SET search_path TO 'grid', 'public';
-	INSERT INTO receptors_to_critical_deposition_areas (assessment_area_id, type, critical_deposition_area_id, receptor_id, zoom_level, surface, receptor_habitat_coverage)
+	INSERT INTO grid.receptors_to_critical_deposition_areas (assessment_area_id, type, critical_deposition_area_id, receptor_id, zoom_level, surface, receptor_habitat_coverage)
 	SELECT
 		assessment_area_id,
 		type,
@@ -108,7 +97,7 @@ BEGIN;
 		surface,
 		receptor_habitat_coverage
 
-		FROM receptors_to_critical_deposition_areas_tolerance
+		FROM grid.receptors_to_critical_deposition_areas_tolerance
 
 		WHERE is_robust_intersect IS TRUE
 

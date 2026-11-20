@@ -1,6 +1,6 @@
 /*
- * build_receptors_to_assessment_areas_view
- * ----------------------------------------
+ * build_receptors_to_assessment_areas_tolerance_view
+ * --------------------------------------------------
  * View to fill the receptors_to_assessment_areas table.
  */
 CREATE OR REPLACE VIEW build_receptors_to_assessment_areas_tolerance_view AS
@@ -37,8 +37,8 @@ SELECT
 
 
 /*
- * build_receptors_to_critical_deposition_areas_view
- * -------------------------------------------------
+ * build_receptors_to_critical_deposition_areas_tolerance_view
+ * -----------------------------------------------------------
  * View to fill the receptors_to_critical_deposition_areas table.
  *
  * The coverage of the habitat on each receptor is calculated by looking at the intersection of the habitat areas that intersect the receptor.
