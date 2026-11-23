@@ -54,7 +54,7 @@ BEGIN;
 		description,
 		relevant,
 		geometry,
-		ST_Buffer(geometry, system.constant('INTERSECTION_TOLERANCE')::numeric) AS geometry_buffered
+		ae_get_buffered_geometry(geometry) AS geometry_buffered
 
 		FROM nature.critical_deposition_areas_view 
 	;

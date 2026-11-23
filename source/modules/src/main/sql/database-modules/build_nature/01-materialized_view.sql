@@ -9,8 +9,8 @@ SELECT
 	assessment_area_id,
 	type,
 	geometry,
-	ST_Buffer(geometry, system.constant('INTERSECTION_TOLERANCE')::numeric) AS geometry_buffered
-
+	ae_get_buffered_geometry(geometry) AS geometry_buffered
+	
 	FROM assessment_areas
 ;
 
@@ -30,7 +30,7 @@ SELECT
 	natura2000_area_id,
 	natura2000_directive_area_id,
 	natura2000_directive_id,
-	ST_Buffer(geometry, system.constant('INTERSECTION_TOLERANCE')::numeric) AS geometry_buffered
+	ae_get_buffered_geometry(geometry) AS geometry_buffered
 
 	FROM natura2000_directive_areas
 ;
@@ -52,7 +52,7 @@ SELECT
 	habitat_type_id,
 	coverage,
 	geometry,
-	ST_Buffer(geometry, system.constant('INTERSECTION_TOLERANCE')::numeric) AS geometry_buffered
+	ae_get_buffered_geometry(geometry) AS geometry_buffered
 
 	FROM habitat_areas
 ;
