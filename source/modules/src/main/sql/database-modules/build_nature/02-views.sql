@@ -90,9 +90,10 @@ WITH
 			habitat_area_id,
 			habitat_type_id,
 			coverage,
-			ST_Buffer(
+			ae_buffer_with_tolerance (
 				ST_CollectionExtract(ST_Multi(ST_Union(ST_Intersection(natura2000_directive_area_geometry, habitat_area_geometry))), 3)
-				, -system.constant('INTERSECTION_TOLERANCE')::numeric, 'join=mitre') AS geometry
+				, FALSE
+				) AS geometry
 
 			FROM
 				-- Nitrogen-sensitive designated habitat (or H9999) within a HR-area, with the correct design status

@@ -9,7 +9,7 @@ SELECT
 	assessment_area_id,
 	type,
 	geometry,
-	ae_get_buffered_geometry(geometry) AS geometry_buffered
+	ae_buffer_with_tolerance (geometry, TRUE) AS geometry_buffered
 	
 	FROM assessment_areas
 ;
@@ -30,7 +30,7 @@ SELECT
 	natura2000_area_id,
 	natura2000_directive_area_id,
 	natura2000_directive_id,
-	ae_get_buffered_geometry(geometry) AS geometry_buffered
+	ae_buffer_with_tolerance (geometry, TRUE) AS geometry_buffered
 
 	FROM natura2000_directive_areas
 ;
@@ -52,7 +52,7 @@ SELECT
 	habitat_type_id,
 	coverage,
 	geometry,
-	ae_get_buffered_geometry(geometry) AS geometry_buffered
+	ae_buffer_with_tolerance (geometry, TRUE) AS geometry_buffered
 
 	FROM habitat_areas
 ;

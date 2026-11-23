@@ -54,7 +54,7 @@ BEGIN;
 		description,
 		relevant,
 		geometry,
-		ae_get_buffered_geometry(geometry) AS geometry_buffered
+		ae_buffer_with_tolerance(geometry, TRUE) AS geometry_buffered
 
 		FROM nature.critical_deposition_areas_view 
 	;
