@@ -8,14 +8,12 @@ CREATE MATERIALIZED VIEW assessment_areas_buffered AS
 SELECT
 	assessment_area_id,
 	type,
-	geometry,
 	ae_buffer_with_tolerance (geometry, TRUE) AS geometry_buffered
 	
 	FROM assessment_areas
 ;
 
 CREATE UNIQUE INDEX	idx_assessment_areas_buffered ON assessment_areas_buffered (assessment_area_id);
-CREATE INDEX idx_assessment_areas_buffered_geometry_gist ON assessment_areas_buffered USING GIST (geometry);
 CREATE INDEX idx_assessment_areas_buffered_geometry_buffered_gist ON assessment_areas_buffered USING GIST (geometry_buffered);
 
 
@@ -51,7 +49,6 @@ SELECT
 	habitat_area_id,
 	habitat_type_id,
 	coverage,
-	geometry,
 	ae_buffer_with_tolerance (geometry, TRUE) AS geometry_buffered
 
 	FROM habitat_areas
@@ -59,5 +56,4 @@ SELECT
 
 CREATE UNIQUE INDEX	idx_habitat_areas_buffered ON habitat_areas_buffered (habitat_area_id);
 CREATE INDEX idx_habitat_areas_buffered_assessment_area_id ON habitat_areas_buffered (assessment_area_id);
-CREATE INDEX idx_habitat_areas_buffered_geometry_gist ON habitat_areas_buffered USING GIST (geometry);
 CREATE INDEX idx_habitat_areas_buffered_geometry_buffered_gist ON habitat_areas_buffered USING GIST (geometry_buffered);

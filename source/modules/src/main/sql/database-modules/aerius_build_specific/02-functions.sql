@@ -10,12 +10,18 @@ CREATE OR REPLACE FUNCTION ae_buffer_with_tolerance (v_geometry geometry(MultiPo
 	RETURNS geometry(MultiPolygon) AS
 $BODY$
 
-	SELECT public.ST_Buffer(v_geometry, 
-								CASE 
-									WHEN v_negative THEN -system.constant('INTERSECTION_TOLERANCE')::numeric 
-									ELSE system.constant('INTERSECTION_TOLERANCE')::numeric 
-								END
-								, 'join=mitre'
-							)
+	SELECT ST_CollectionExtract(
+				ST_Multi(
+					ST_MakeValid(
+						public.ST_Buffer(v_geometry, 
+							CASE 
+								WHEN v_negative THEN -system.constant('INTERSECTION_TOLERANCE')::numeric 
+								ELSE system.constant('INTERSECTION_TOLERANCE')::numeric 
+							END
+							, 'join=mitre'
+						)
+					)
+				)
+			, 3)
 $BODY$
 LANGUAGE sql IMMUTABLE;
