@@ -92,9 +92,9 @@ WITH
 			coverage,
 			ae_buffer_with_tolerance(
 				ST_Union(
-					ST_Intersection(natura2000_directive_area_geometry, habitat_area_geometry)
-				)
-			, FALSE)
+					ST_Intersection(natura2000_directive_area_geometry_buffered, habitat_area_geometry_buffered)
+				), 
+			FALSE)
 			AS geometry
 
 			FROM
@@ -105,8 +105,8 @@ WITH
 					habitat_type_id,
 					natura2000_directive_area_id,
 					coverage,
-					natura2000_directive_area_properties.geometry_buffered AS natura2000_directive_area_geometry,
-					habitat_areas_buffered.geometry_buffered AS habitat_area_geometry
+					natura2000_directive_area_properties.geometry_buffered AS natura2000_directive_area_geometry_buffered,
+					habitat_areas_buffered.geometry_buffered AS habitat_area_geometry_buffered
 
 					FROM habitat_areas_buffered
 						INNER JOIN habitat_types USING (habitat_type_id)
