@@ -54,7 +54,7 @@ BEGIN;
 		description,
 		relevant,
 		geometry,
-		ae_buffer_with_tolerance(geometry, TRUE) AS geometry_buffered
+		buffer_with_tolerance_inward(geometry) AS geometry_buffered
 
 		FROM nature.critical_deposition_areas_view 
 	;
@@ -77,7 +77,7 @@ SELECT system.raise_notice('Build: receptors_to_critical_deposition_areas @ ' ||
 
 		FROM grid.build_receptors_to_critical_deposition_areas_tolerance_view 
 		
-		WHERE 
+		WHERE
 			assessment_area_id = {assessment_area_id}
 			AND type = '{critical_deposition_area_type}'
 	;

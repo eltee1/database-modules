@@ -90,11 +90,11 @@ WITH
 			habitat_area_id,
 			habitat_type_id,
 			coverage,
-			ae_buffer_with_tolerance(
+			buffer_with_tolerance_outward(
 				ST_Union(
 					ST_Intersection(natura2000_directive_area_geometry_buffered, habitat_area_geometry_buffered)
-				), 
-			FALSE)
+				)
+			)
 			AS geometry
 
 			FROM

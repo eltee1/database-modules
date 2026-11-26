@@ -8,7 +8,7 @@ CREATE MATERIALIZED VIEW assessment_areas_buffered AS
 SELECT
 	assessment_area_id,
 	type,
-	ae_buffer_with_tolerance (geometry, TRUE) AS geometry_buffered
+	buffer_with_tolerance_inward(geometry) AS geometry_buffered
 	
 	FROM assessment_areas
 ;
@@ -28,7 +28,7 @@ SELECT
 	natura2000_area_id,
 	natura2000_directive_area_id,
 	natura2000_directive_id,
-	ae_buffer_with_tolerance (geometry, TRUE) AS geometry_buffered
+	buffer_with_tolerance_inward(geometry) AS geometry_buffered
 
 	FROM natura2000_directive_areas
 ;
@@ -49,7 +49,7 @@ SELECT
 	habitat_area_id,
 	habitat_type_id,
 	coverage,
-	ae_buffer_with_tolerance (geometry, TRUE) AS geometry_buffered
+	buffer_with_tolerance_inward(geometry) AS geometry_buffered
 
 	FROM habitat_areas
 ;
