@@ -53,7 +53,7 @@ SELECT
 	zoom_level,
 	reduced.receptor_id IS NOT NULL AS is_robust_intersect,
 	surface,
-	ae_determine_habitat_coverage_on_hexagon(assessment_area_id, type, critical_deposition_area_id, receptor_id, zoom_level::integer) AS receptor_habitat_coverage
+	ae_determine_habitat_coverage_on_hexagon(assessment_area_id, type, critical_deposition_area_id, receptor_id, zoom_level) AS receptor_habitat_coverage
 
 	FROM 
 		(SELECT
